@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projeto Ponderada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input, button {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #messageBox {
+            margin-top: 20px;
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Nome -->
+    <input id="name" placeholder="Nome">
+    <!-- Usuário -->
+    <input id="userName" placeholder="Usuário">
+    <!-- Email -->
+    <input id="email" type="email" placeholder="Email">
+    <!-- Senha -->
+    <input type="password" id="password" placeholder="Senha">
+    <!-- Botão de criação -->
+    <button id="createButton">Criar Usuário</button>
+    
+    <!-- Deletar -->
+    <input id="deleteId" placeholder="Insira ID aqui para deletar">
+    <button id="deleteButton">Deletar Usuário</button>
+    
+    <!-- Buscar -->
+    <input id="searchId" placeholder="Insira ID aqui para buscar">
+    <button id="searchButton">Buscar Usuário</button>
+    
+    <div id="searchResults"></div>
+    
+    <!-- Caixa de Mensagens -->
+    <div id="messageBox"></div>
+
+    <script>
+        // Função para buscar usuário
+        document.getElementById('searchButton').addEventListener('click', function () {
+            var searchId = document.getElementById('searchId').value.trim();
+            // Verifica se o campo de busca está vazio
+            if (!searchId) {
+                document.getElementById('messageBox').innerText = 'Por favor, insira um ID para buscar.';
+                return;
+            }
+            fetch(`http://localhost:1337/user/${searchId}`)
+                // Verifica se a resposta é ok
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => { 
+                            throw new Error(errorData.message || 'Usuário não encontrado');
+                        });
+                    }
+                    return response.json();
+                })
+                // Mostra os dados do usuário
+                .then(data => {
+                    var element = document.getElementById("searchResults");
+                    element.innerHTML = ''; // Limpa resultados anteriores
+                    
+                    var tag = document.createElement("p");
+                    var text = document.createTextNode(`Nome: ${data.nome}, Usuário: ${data.username}, Email: ${data.email}`);
+                    tag.appendChild(text);
+                    element.appendChild(tag);
+                })
+                // Mostra erro
+                .catch(error => {
+                    document.getElementById('messageBox').innerText = 'Erro: ' + error.message;
+                    console.error('Erro:', error);
+                });
+        });
+
+        // Função para deletar usuário
+        document.getElementById('deleteButton').addEventListener('click', function () {
+            var deleteId = document.getElementById('deleteId').value.trim();
+            // Verifica se o campo de busca está vazio
+            if (!deleteId) {
+                document.getElementById('messageBox').innerText = 'Por favor, insira um ID para deletar.';
+                return;
+            }
+
+            fetch(`http://localhost:1337/user/${deleteId}`, {
+                method: 'DELETE'
+            })
+                // Verifica se a resposta é ok
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text) });
+                    }
+                    return response.text();
+                })
+                // Mostra mensagem de sucesso
+                .then(result => {
+                    document.getElementById('messageBox').innerText = 'Foi deletado: ' + result;
+                    console.log('Sucesso:', result);
+                })
+                // Mostra erro
+                .catch(error => {
+                    document.getElementById('messageBox').innerText = 'Erro: ' + error.message;
+                    console.error('Erro:', error);
+                });
+        });
+
+        // Função para criar usuário
+        document.getElementById('createButton').addEventListener('click', function () {
+            var name = document.getElementById('name').value.trim();
+            var userName = document.getElementById('userName').value.trim();
+            var email = document.getElementById('email').value.trim();
+            var password = document.getElementById('password').value.trim();
+            // Verifica se todos os campos estão preenchidos
+            if (!name || !userName || !email || !password) {
+                document.getElementById('messageBox').innerText = 'Por favor, preencha todos os campos.';
+                return;
+            }
+            // Envia os dados para o servidor  
+            fetch('http://localhost:1337/user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nome: name,
+                    username: userName,
+                    senha: password,
+                    email: email
+                })
+            })
+            // Verifica se a resposta é ok
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Erro ao criar usuário');
+                    });
+                }
+                return response.json();
+            })
+            // Mostra mensagem de sucesso
+            .then(data => {
+                document.getElementById('messageBox').innerText = "Usuário " + data.username + ' registrado com sucesso!';
+            })
+            // Mostra erro
+            .catch(error => {
+                document.getElementById('messageBox').innerText = 'Erro: ' + error.message;
+                console.error('Erro:', error);
+            });
+        });
+
+    </script>
+</body>
+
+</html>
